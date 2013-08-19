@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.NumberFormat;
 import java.text.ParseException;
-// useless changes that I can play with
+
 public class SalaryCalc extends JFrame {
 	
 	private static JMenuBar menuBar;
