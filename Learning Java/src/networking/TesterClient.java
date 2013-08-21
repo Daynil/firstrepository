@@ -9,20 +9,27 @@ import javax.swing.*;
 
 public class TesterClient extends JFrame {
 	
+	// GUI components
+	private static TesterClient frame;
 	private JEditorPane display;	
-	private String displayTxt = "";
-	private String helpText = "> Client Application: \n> Type 'connect' to attempt connection to server";
-	
 	private JTextField outgoing;
 	
+	private JLabel serverStatus; 
+	private ImageIcon onImage;
+	private ImageIcon offImage;
+	
+	// Networking components
 	private PrintWriter writer;
 	private BufferedReader reader;
 	private Socket sock;
 	private boolean isConnected = false;
 	
-	private static TesterClient frame;
+	// Data Helpers
+	private String displayTxt = "";
+	private String helpText = "System> Type 'connect' to attempt connection to server, 'disconnect' to close connection, 'help' to review this information";
+	private String[] commands = {"connect", "disconnect", "help"};
 	
-	
+
 	public TesterClient(String name) {
 		super(name);
 		setResizable(false);
@@ -54,6 +61,19 @@ public class TesterClient extends JFrame {
 		mainPanel.setBackground(new Color(220, 220, 220));
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.PAGE_AXIS));
 		
+		// Shows server status TODO Get the images to load when making a JAR
+		offImage = new ImageIcon("images/serveroffimage.png");
+		onImage = new ImageIcon("images/serveronimage.png");
+		//onImage = createImageIcon("images/serveronimage.png");
+		//offImage = createImageIcon("images/serveroffimage.png");
+		JPanel statusPanel = new JPanel();
+		mainPanel.add(statusPanel);
+		serverStatus = new JLabel();
+		serverStatus.setText("Connection Status ");
+		serverStatus.setIcon(offImage);
+		serverStatus.setHorizontalTextPosition(JLabel.LEFT);
+		statusPanel.add(serverStatus);
+		
 		display = new JEditorPane();
 		display.setEditable(false);
 		//display.setBackground(Color.WHITE);
@@ -64,7 +84,7 @@ public class TesterClient extends JFrame {
 		displayScroll.setMinimumSize(new Dimension(10, 10));
 		mainPanel.add(displayScroll);
 		
-		displayTxt += helpText;
+		displayTxt += "System> Welcome to Danny's Chat Program (Client)\n" + helpText;
 		display.setText(displayTxt);
 		
 		//TODO create text entry field, button to send, listener of send button/or enter key, commands that the server can respond to
@@ -90,24 +110,50 @@ public class TesterClient extends JFrame {
 			reader = new BufferedReader(streamReader);
 			Thread readerThread = new Thread(new IncomingReader()); 
 			readerThread.start(); //start listener thread
-			displayTxt += "\n> " + "Connection Established!";
-			display.setText(displayTxt);			
+			displayTxt += "\nSystem> " + "Connection established!";
+			display.setText(displayTxt);	
+			isConnected = true;
+			serverStatus.setIcon(onImage);
 		} catch(IOException ex) {
-			displayTxt += "\n" + "> " + "Couldn't Connect!";
+			displayTxt += "\nSystem> " + "Couldn't connect!";
 			display.setText(displayTxt);
 			//ex.printStackTrace();
 		}
 	}
 	
+	public boolean isCommand(String id) {
+		for (String each : commands) {
+			if (id.equals(each)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	class OutgoingListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
-			displayTxt += "\n> " + outgoing.getText();
+			displayTxt += "\nUser> " + outgoing.getText();
 			display.setText(displayTxt);
-			if (outgoing.getText().toLowerCase().equals("connect") && !isConnected) {
+			String id = outgoing.getText().toLowerCase();
+			if (id.equals("connect") && !isConnected) {
 				frame.connectServer(); 
-				isConnected = true;
 			}
-			else if (!outgoing.getText().toLowerCase().equals("connect")) {
+			else if (id.equals("disconnect") && isConnected) {
+				try {
+					sock.close();
+					serverStatus.setIcon(offImage);
+					isConnected = false;
+					displayTxt += "\n System> Connection severed.";
+					display.setText(displayTxt);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			else if (id.equals("help")) {
+				displayTxt += "\nSystem> " + helpText;
+				display.setText(displayTxt);
+			}
+			else if (!isCommand(id)) {
 				try {
 					writer.println(outgoing.getText());
 					writer.flush();
@@ -125,7 +171,7 @@ public class TesterClient extends JFrame {
 			String incomingMsg;
 			try {
 				while ((incomingMsg = reader.readLine()) != null) {
-					displayTxt += "/n> ";
+					displayTxt += "/nSomeone> ";
 					displayTxt += incomingMsg;
 					display.setText(displayTxt);
 				}

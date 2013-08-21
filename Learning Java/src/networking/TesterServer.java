@@ -4,27 +4,33 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import javax.swing.*;
 
-// TODO make this a server that sends some random text to a client when they request it, and display both the message sent and that the client
-// requested it **Make sure to close Socket when program closes and make socket close IMMEDIATELY so I can rewrite server anytime and
-// use the same socket
+//TODO test the server with someone
 
 public class TesterServer extends JFrame {
 	
+	// GUI Components
+	private static TesterServer frame;
 	private JTextField outgoing;
-	
 	private JEditorPane display;	
-	private String displayTxt = "";
-	private String helpText = "> Server Application: \n> Type 'start' to start up the server";
 	
+	private JLabel serverStatus; 
+	private ImageIcon onImage;
+	private ImageIcon offImage;
+	
+	// Networking Components
 	private PrintWriter writer;
 	private BufferedReader reader;
 	private Socket clientSock;
 	private ServerSocket serverSocket;
 	private boolean serverOn = false;
 	
-	private static TesterServer frame;
+	// Data Helpers
+	private String displayTxt = "";
+	private String helpText = "System> Type 'start' to start up the server, 'stop' to shut it down, 'help' to display this information again";
+	private String[] commands = {"start", "stop", "help"};
 	
 	public TesterServer(String name) {
 		super(name);
@@ -57,6 +63,19 @@ public class TesterServer extends JFrame {
 		mainPanel.setBackground(new Color(220, 220, 220));
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.PAGE_AXIS));
 		
+		// Shows server status TODO Get the images to load when making a JAR
+		offImage = new ImageIcon("images/serveroffimage.png");
+		onImage = new ImageIcon("images/serveronimage.png");
+		//onImage = createImageIcon("images/serveronimage.png");
+		//offImage = createImageIcon("images/serveroffimage.png");
+		JPanel statusPanel = new JPanel();
+		mainPanel.add(statusPanel);
+		serverStatus = new JLabel();
+		serverStatus.setText("Server Status ");
+		serverStatus.setIcon(offImage);
+		serverStatus.setHorizontalTextPosition(JLabel.LEFT);
+		statusPanel.add(serverStatus);
+		
 		display = new JEditorPane();
 		display.setEditable(false);
 		//display.setBackground(Color.WHITE);
@@ -67,10 +86,10 @@ public class TesterServer extends JFrame {
 		displayScroll.setMinimumSize(new Dimension(10, 10));
 		mainPanel.add(displayScroll);
 		
-		displayTxt += helpText;
+		displayTxt += "System> Welcome to Danny's Chat Program (Server)\n" + helpText;
 		display.setText(displayTxt);
 		
-		//TODO create text entry field, button to send, listener of send button/or enter key, commands that the server can respond to
+		
 		JPanel userPanel = new JPanel();
 		mainPanel.add(userPanel);
 		
@@ -84,6 +103,22 @@ public class TesterServer extends JFrame {
 		userPanel.add(sendButton);
 	}
 	
+	/**
+	 * Finds images and loads them to an icon
+	 * @param path of the image
+	 * @param description of the image
+	 * @return an ImageIcon
+	 */
+	private ImageIcon createImageIcon(String path) {
+		java.net.URL imgURL = getClass().getResource(path);
+		if (imgURL != null) {
+			return new ImageIcon(imgURL);
+		} else {
+			System.err.println("Couldn't find file: " + path);
+			return null;
+		}
+	}
+
 	public void startServer() {
 		try {
 			// Set up port
@@ -91,8 +126,9 @@ public class TesterServer extends JFrame {
 			serverSocket.setReuseAddress(true);
 			
 			serverOn = true;
-			displayTxt += "\n> Server On";
+			displayTxt += "\n System> Server initialized";
 			display.setText(displayTxt);
+			serverStatus.setIcon(onImage);
 			
 			// Create thread to wait for connections
 			Thread connectionWait = new Thread(new ConnectionWaiter());
@@ -103,14 +139,39 @@ public class TesterServer extends JFrame {
 		}
 	}
 	
+	public boolean isCommand(String id) {
+		for (String each : commands) {
+			if (id.equals(each)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	class OutgoingListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
-			displayTxt += "\n> " + outgoing.getText();
+			displayTxt += "\nUser> " + outgoing.getText();
 			display.setText(displayTxt);
-			if (outgoing.getText().toLowerCase().equals("start") && !serverOn) {
+			String id = outgoing.getText().toLowerCase();
+			if (id.equals("start") && !serverOn) {
 				frame.startServer();
 			}
-			else if (!outgoing.getText().toLowerCase().equals("connect")) {
+			else if (id.equals("stop") && serverOn) {
+				try {
+					serverSocket.close();
+					serverStatus.setIcon(offImage);
+					serverOn = false;
+					displayTxt += "\n System> Server terminated";
+					display.setText(displayTxt);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			else if (id.equals("help")) {
+				displayTxt += "\nSystem> " + helpText;
+				display.setText(displayTxt);
+			}
+			else if (!isCommand(id)) {
 				try {
 					writer.println(outgoing.getText());
 					writer.flush();
@@ -120,20 +181,6 @@ public class TesterServer extends JFrame {
 			}
 			outgoing.setText("");
 			outgoing.requestFocus();
-		}
-	}
-	
-	class IncomingReader implements Runnable {
-		public void run() {
-			String incomingMsg;
-			try {
-				while ((incomingMsg = reader.readLine()) != null) {
-					displayTxt += "/n> " + incomingMsg;
-					display.setText(displayTxt);
-				}
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
 		}
 	}
 	
@@ -170,7 +217,7 @@ public class TesterServer extends JFrame {
 			String incomingMsg;
 			try {
 				while((incomingMsg = reader.readLine()) != null) {
-					displayTxt += "\n> ";
+					displayTxt += "\nSomeone> ";
 					displayTxt += incomingMsg;
 					display.setText(displayTxt);
 				}
