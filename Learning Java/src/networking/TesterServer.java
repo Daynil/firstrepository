@@ -7,8 +7,9 @@ import java.net.*;
 import java.util.ArrayList;
 
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 
-//TODO test the server with someone
+//TODO test the server with someone, figure out how to detect server-side connection closures to update client connection status
 
 public class TesterServer extends JFrame {
 	
@@ -29,6 +30,7 @@ public class TesterServer extends JFrame {
 	private boolean serverOn = false;
 	
 	// Data Helpers
+	private String serverTerminationCode = "789159357";
 	private String displayTxt = "";
 	private String helpText = "System> Type 'start' to start up the server, 'stop' to shut it down, 'help' to display this information again";
 	private String[] commands = {"start", "stop", "help"};
@@ -77,6 +79,8 @@ public class TesterServer extends JFrame {
 		
 		display = new JEditorPane();
 		display.setEditable(false);
+		DefaultCaret caret = (DefaultCaret) display.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);  //always scroll to bottom on text update
 		//display.setBackground(Color.WHITE);
 		
 		JScrollPane displayScroll = new JScrollPane(display);
@@ -85,10 +89,8 @@ public class TesterServer extends JFrame {
 		displayScroll.setMinimumSize(new Dimension(10, 10));
 		mainPanel.add(displayScroll);
 		
-		displayTxt += "System> Welcome to Danny's Chat Program (Server)\n" + helpText;
-		display.setText(displayTxt);
-		
-		
+		toDisplay("System", "Welcome to Danny's Chat Program (Server)\n" + helpText);
+			
 		JPanel userPanel = new JPanel();
 		mainPanel.add(userPanel);
 		
@@ -100,6 +102,12 @@ public class TesterServer extends JFrame {
 		JButton sendButton = new JButton("Send");
 		sendButton.addActionListener(sendListener);
 		userPanel.add(sendButton);
+	}
+	
+	public void toDisplay(String who, String what) {
+		displayTxt += "\n" + who + "> ";
+		displayTxt += what;
+		display.setText(displayTxt);
 	}
 	
 	/**
@@ -125,8 +133,7 @@ public class TesterServer extends JFrame {
 			serverSocket.setReuseAddress(true);
 			
 			serverOn = true;
-			displayTxt += "\n System> Server initialized";
-			display.setText(displayTxt);
+			toDisplay("System", "Server initialized");
 			serverStatus.setIcon(onImage);
 			
 			// Create thread to wait for connections
@@ -149,26 +156,24 @@ public class TesterServer extends JFrame {
 	
 	class OutgoingListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
-			displayTxt += "\nUser> " + outgoing.getText();
-			display.setText(displayTxt);
+			toDisplay("User", outgoing.getText());
 			String id = outgoing.getText().toLowerCase();
 			if (id.equals("start") && !serverOn) {
 				frame.startServer();
 			}
 			else if (id.equals("stop") && serverOn) {
 				try {
+					writer.println(serverTerminationCode);
 					serverSocket.close();
 					serverStatus.setIcon(offImage);
 					serverOn = false;
-					displayTxt += "\n System> Server terminated";
-					display.setText(displayTxt);
+					toDisplay("System", "Server terminated");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 			else if (id.equals("help")) {
-				displayTxt += "\nSystem> " + helpText;
-				display.setText(displayTxt);
+				toDisplay("System", helpText);
 			}
 			else if (!isCommand(id)) {
 				try {
@@ -207,6 +212,7 @@ public class TesterServer extends JFrame {
 				sock = clientSock;
 				InputStreamReader isReader = new InputStreamReader(clientSock.getInputStream());
 				reader = new BufferedReader(isReader);
+				toDisplay("System", "Someone Connected");
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}
@@ -216,9 +222,7 @@ public class TesterServer extends JFrame {
 			String incomingMsg;
 			try {
 				while((incomingMsg = reader.readLine()) != null) {
-					displayTxt += "\nSomeone> ";
-					displayTxt += incomingMsg;
-					display.setText(displayTxt);
+					toDisplay("Someone", incomingMsg);
 				}
 			} catch (IOException ex) {
 				ex.printStackTrace();

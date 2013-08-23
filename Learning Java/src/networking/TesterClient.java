@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.*;
 
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 
 public class TesterClient extends JFrame {
 	
@@ -25,6 +26,7 @@ public class TesterClient extends JFrame {
 	private boolean isConnected = false;
 	
 	// Data Helpers
+	private String serverTerminationCode = "789159357";
 	private String displayTxt = "";
 	private String helpText = "System> Type 'connect' to attempt connection to server, 'disconnect' to close connection, 'help' to review this information";
 	private String[] commands = {"connect", "disconnect", "help"};
@@ -74,6 +76,8 @@ public class TesterClient extends JFrame {
 		
 		display = new JEditorPane();
 		display.setEditable(false);
+		DefaultCaret caret = (DefaultCaret) display.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE); //always scroll to bottom on text update
 		//display.setBackground(Color.WHITE);
 		
 		JScrollPane displayScroll = new JScrollPane(display);
@@ -82,8 +86,7 @@ public class TesterClient extends JFrame {
 		displayScroll.setMinimumSize(new Dimension(10, 10));
 		mainPanel.add(displayScroll);
 		
-		displayTxt += "System> Welcome to Danny's Chat Program (Client)\n" + helpText;
-		display.setText(displayTxt);
+		toDisplay("System", "Welcome to Danny's Chat Program (Client)\n" + helpText);
 		
 		//TODO create text entry field, button to send, listener of send button/or enter key, commands that the server can respond to
 		JPanel userPanel = new JPanel();
@@ -98,6 +101,12 @@ public class TesterClient extends JFrame {
 		sendButton.addActionListener(sendListener);
 		userPanel.add(sendButton);
 		
+	}
+	
+	public void toDisplay(String who, String what) {
+		displayTxt += "\n" + who + "> ";
+		displayTxt += what;
+		display.setText(displayTxt);
 	}
 	
 	/**
@@ -118,20 +127,19 @@ public class TesterClient extends JFrame {
 	
 	public void connectServer() {
 		try {
-			//sock = new Socket("127.0.0.1", 5000);    //for testing locally
-			sock = new Socket("173.24.164.36", 5000);
+			// "25.51.10.123" (from java); "173.24.164.36" (from whatsmyip - doesn't work); "127.0.0.1" (for local testing);
+			InetAddress address = InetAddress.getByName("25.51.10.123");
+			sock = new Socket(address, 5000);
 			writer = new PrintWriter(sock.getOutputStream());
 			InputStreamReader streamReader = new InputStreamReader(sock.getInputStream());
 			reader = new BufferedReader(streamReader);
 			Thread readerThread = new Thread(new IncomingReader()); 
 			readerThread.start(); //start listener thread
-			displayTxt += "\nSystem> " + "Connection established!";
-			display.setText(displayTxt);	
+			toDisplay("System", "Connection established!");
 			isConnected = true;
 			serverStatus.setIcon(onImage);
 		} catch(IOException ex) {
-			displayTxt += "\nSystem> " + "Couldn't connect!";
-			display.setText(displayTxt);
+			toDisplay("System", "Couldn't connect!");
 			//ex.printStackTrace();
 		}
 	}
@@ -147,8 +155,7 @@ public class TesterClient extends JFrame {
 	
 	class OutgoingListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
-			displayTxt += "\nUser> " + outgoing.getText();
-			display.setText(displayTxt);
+			toDisplay("User", outgoing.getText());
 			String id = outgoing.getText().toLowerCase();
 			if (id.equals("connect") && !isConnected) {
 				frame.connectServer(); 
@@ -158,15 +165,13 @@ public class TesterClient extends JFrame {
 					sock.close();
 					serverStatus.setIcon(offImage);
 					isConnected = false;
-					displayTxt += "\n System> Connection severed.";
-					display.setText(displayTxt);
+					toDisplay("System", "Connection severed.");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 			else if (id.equals("help")) {
-				displayTxt += "\nSystem> " + helpText;
-				display.setText(displayTxt);
+				toDisplay("System", helpText);
 			}
 			else if (!isCommand(id)) {
 				try {
@@ -186,9 +191,14 @@ public class TesterClient extends JFrame {
 			String incomingMsg;
 			try {
 				while ((incomingMsg = reader.readLine()) != null) {
-					displayTxt += "/nSomeone> ";
-					displayTxt += incomingMsg;
-					display.setText(displayTxt);
+					if (incomingMsg.equals(serverTerminationCode)) {
+						toDisplay("System", "Connection to server lost");
+						isConnected = false;
+						serverStatus.setIcon(offImage);
+					}
+					else {
+						toDisplay("Someone", incomingMsg);
+					}
 				}
 			} catch (IOException ex) {
 				ex.printStackTrace();
