@@ -5,6 +5,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+
 import javax.swing.*;
 
 //TODO test the server with someone
@@ -64,10 +65,8 @@ public class TesterServer extends JFrame {
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.PAGE_AXIS));
 		
 		// Shows server status TODO Get the images to load when making a JAR
-		offImage = new ImageIcon("images/serveroffimage.png");
-		onImage = new ImageIcon("images/serveronimage.png");
-		//onImage = createImageIcon("images/serveronimage.png");
-		//offImage = createImageIcon("images/serveroffimage.png");
+		onImage = createImageIcon("/serveronimage.png");
+		offImage = createImageIcon("/serveroffimage.png");
 		JPanel statusPanel = new JPanel();
 		mainPanel.add(statusPanel);
 		serverStatus = new JLabel();
@@ -110,7 +109,7 @@ public class TesterServer extends JFrame {
 	 * @return an ImageIcon
 	 */
 	private ImageIcon createImageIcon(String path) {
-		java.net.URL imgURL = getClass().getResource(path);
+		URL imgURL = frame.getClass().getResource(path);
 		if (imgURL != null) {
 			return new ImageIcon(imgURL);
 		} else {

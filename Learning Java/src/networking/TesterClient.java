@@ -62,10 +62,8 @@ public class TesterClient extends JFrame {
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.PAGE_AXIS));
 		
 		// Shows server status TODO Get the images to load when making a JAR
-		offImage = new ImageIcon("images/serveroffimage.png");
-		onImage = new ImageIcon("images/serveronimage.png");
-		//onImage = createImageIcon("images/serveronimage.png");
-		//offImage = createImageIcon("images/serveroffimage.png");
+		onImage = createImageIcon("/serveronimage.png");
+		offImage = createImageIcon("/serveroffimage.png");
 		JPanel statusPanel = new JPanel();
 		mainPanel.add(statusPanel);
 		serverStatus = new JLabel();
@@ -102,9 +100,26 @@ public class TesterClient extends JFrame {
 		
 	}
 	
+	/**
+	 * Finds images and loads them to an icon
+	 * @param path of the image
+	 * @param description of the image
+	 * @return an ImageIcon
+	 */
+	private ImageIcon createImageIcon(String path) {
+		URL imgURL = frame.getClass().getResource(path);
+		if (imgURL != null) {
+			return new ImageIcon(imgURL);
+		} else {
+			System.err.println("Couldn't find file: " + path);
+			return null;
+		}
+	}
+	
 	public void connectServer() {
 		try {
-			sock = new Socket("127.0.0.1", 5000);
+			//sock = new Socket("127.0.0.1", 5000);    //for testing locally
+			sock = new Socket("173.24.164.36", 5000);
 			writer = new PrintWriter(sock.getOutputStream());
 			InputStreamReader streamReader = new InputStreamReader(sock.getInputStream());
 			reader = new BufferedReader(streamReader);
