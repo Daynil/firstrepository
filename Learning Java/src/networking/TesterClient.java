@@ -29,7 +29,7 @@ public class TesterClient extends JFrame {
 	// Data Helpers
 	private String serverTerminationCode = "789159357";
 	private String displayTxt = "";
-	private String helpText = "System> Type 'connect' to attempt connection to server, 'disconnect' to close connection, 'help' to review this information";
+	private String helpText = "Type 'connect IP Address' to attempt connection to server, 'disconnect' to close connection, 'help' to review this information";
 	private String[] commands = {"connect", "disconnect", "help"};
 	
 
@@ -126,10 +126,10 @@ public class TesterClient extends JFrame {
 		}
 	}
 	
-	public void connectServer() {
+	public void connectServer(String ip) {
 		try {
 			// "25.51.10.123" (from java); "173.24.164.36" (from whatsmyip - doesn't work); "127.0.0.1" (for local testing);
-			InetAddress address = InetAddress.getByName("25.51.10.123");
+			InetAddress address = InetAddress.getByName(ip);
 			sock = new Socket(address, 5000);
 			writer = new PrintWriter(sock.getOutputStream());
 			InputStreamReader streamReader = new InputStreamReader(sock.getInputStream());
@@ -158,8 +158,8 @@ public class TesterClient extends JFrame {
 		public void actionPerformed(ActionEvent event) {
 			toDisplay("User", outgoing.getText());
 			String id = outgoing.getText().toLowerCase();
-			if (id.equals("connect") && !isConnected) {
-				frame.connectServer(); 
+			if (id.substring(0, 7).equals("connect") && !isConnected) {
+				frame.connectServer(id.substring(8, id.length()));
 			}
 			else if (id.equals("disconnect") && isConnected) {
 				try {

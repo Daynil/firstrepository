@@ -163,8 +163,6 @@ public class TesterServer extends JFrame {
 			}
 			else if (id.equals("stop") && serverOn) {
 				try {
-					writer.println(serverTerminationCode);
-					writer.flush();
 					serverSocket.close();
 					serverStatus.setIcon(offImage);
 					serverOn = false;
