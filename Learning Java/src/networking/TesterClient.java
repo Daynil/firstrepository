@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.nio.channels.Selector;
 
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
@@ -162,6 +163,8 @@ public class TesterClient extends JFrame {
 			}
 			else if (id.equals("disconnect") && isConnected) {
 				try {
+					writer.write(serverTerminationCode);
+					writer.flush();
 					sock.close();
 					serverStatus.setIcon(offImage);
 					isConnected = false;

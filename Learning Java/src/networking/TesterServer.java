@@ -164,6 +164,7 @@ public class TesterServer extends JFrame {
 			else if (id.equals("stop") && serverOn) {
 				try {
 					writer.println(serverTerminationCode);
+					writer.flush();
 					serverSocket.close();
 					serverStatus.setIcon(offImage);
 					serverOn = false;
@@ -222,7 +223,12 @@ public class TesterServer extends JFrame {
 			String incomingMsg;
 			try {
 				while((incomingMsg = reader.readLine()) != null) {
-					toDisplay("Someone", incomingMsg);
+					if (incomingMsg.equals(serverTerminationCode)) {
+						toDisplay("System", "Someone Disconnected");
+					}
+					else {
+						toDisplay("Someone", incomingMsg);
+					}
 				}
 			} catch (IOException ex) {
 				ex.printStackTrace();
