@@ -1,0 +1,15 @@
+This
+will
+demonstrate
+understanding
+of
+reading
+a
+text
+file
+and
+printing
+its
+contents
+to
+console.
